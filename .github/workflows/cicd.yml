@@ -1,0 +1,31 @@
+name:CICD
+on:
+  push:
+    branch:
+     - deploy-to-ec2
+
+jobs:
+  build:
+    runs-on: ubuntu:latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v3
+      - name: Login to Docker Hub
+        run: docker login -u onkarpasrichaa -p ${{secrets.Docker_Password}}
+      - name: Build Docker Image
+        run: docker build -t integrations/reactjs .
+      - name: Publish image to docker hub
+        run: docker push integrations/reactjs:latest
+deploy:
+  needs: build
+  run-on: aws-ec2
+  steps:
+  - name: Pull image from docker hub
+    run: docker pull integrations/reactjs:latest
+  - name: Delete old container
+    run: docker rm -f reactContainer
+  - name: Run docker container 
+    run: docker run -d -p 3000:80 --name reactContainer integrations/reactjs:latest
+    
+      
+        
